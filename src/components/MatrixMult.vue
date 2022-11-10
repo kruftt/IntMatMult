@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import {
-  computed,
-  ref,
-  reactive,
-  onMounted
-} from 'vue'
+import { computed, ref, reactive } from 'vue'
 
 type Vector = { 0: number, 1: number }
 
@@ -18,7 +13,7 @@ const r2 = reactive({ 0: a21, 1: a22})
 const c1 = reactive({ 0: a11, 1: a21})
 const c2 = reactive({ 0: a12, 1: a22})
 
-const A = reactive([r1, r2]) // by rows
+const A = reactive([r1, r2])
 const x = reactive([2,2])
 const b = reactive([8,2])
 
@@ -27,11 +22,7 @@ const xc2 = computed(() => [x[1]*c2[0], x[1]*c2[1]])
 const hp1 = computed(() => getLineCoords(r1[0], r1[1], b[0]))
 const hp2 = computed(() => getLineCoords(r2[0], r2[1], b[1]))
 
-enum SlnType {
-  None,
-  Point,
-  Line
-}
+enum SlnType { None, Point, Line }
 const slnType = ref(SlnType.Point)
 
 function getLineCoords(x: number, y: number, b: number) {
@@ -39,20 +30,17 @@ function getLineCoords(x: number, y: number, b: number) {
     if (x == 0) {
       return [0, 0, 0, 0]
     } else {
-      // vertical line intercept b/x
       const i = b/x
       return [i, 10, i, -10]
     }
   } else {
     if (x == 0) {
-      // horizontal line
       const i = b/y
       return [-10, i, 10, i]
     } else {
       if (Math.abs(x) < Math.abs(y)) {
-        // todo optimize multiplications
         const m = -x/y
-        const i = b/y // y intercept
+        const i = b/y
         const dy = 10*m
         return [-10, i-dy, 10, i+dy]
       } else {
@@ -79,31 +67,19 @@ function compute_b() {
 function compute_x() {
   const det = (A[0][0]*A[1][1] - A[1][0]*A[0][1])
   if (det == 0) {
-    
-    if ((b[0]*(c1[1]+c2[1]) != b[1]*(c1[0]+c2[0])) // b not a combo of columns
-      // b
-      // || (c1[0] == 0 && c1[1] == 0) // Still could work!
-      // || (c2[0] == 0 && c2[1] == 0)
-    ) {
-      // or X is not (no solutions)
-      // - hide X vector
-      // - hide xc1, xc2
-      // - (no X line)
+    if (b[0]*(c1[1]+c2[1]) != b[1]*(c1[0]+c2[0])) {
       slnType.value = SlnType.None
     } else {    
-      // b is a combo of columns
-      // (x becomes a line)
-      // - draw X line (on top of column lines)
       const sr1 = r1[0] + r2[0]
       const sr2 = r1[1] + r2[1]
+      if (sr1 == 0 && sr2 == 0) {
+        slnType.value = SlnType.None
+        return
+      }
       const sb = b[0] + b[1]
-      const sq = sr1*sr1 + sr2*sr2 // 5
+      const sq = sr1*sr1 + sr2*sr2
       x[0] = (sb*sr1/sq)
       x[1] = (sb*sr2/sq)
-
-      // const sq = r1[0]*r1[0] + r1[1]*r1[1]
-      // x[0] = (b[0]*r1[0]/sq)
-      // x[1] = (b[0]*r1[1]/sq)
       slnType.value = SlnType.Line
     }
   } else {
@@ -113,6 +89,7 @@ function compute_x() {
     slnType.value = SlnType.Point
   }
 }
+
 
 const _deg = 180/Math.PI
 const vectorTransform = (v: Vector) => `translate(${v[0]}, ${v[1]})`
@@ -128,13 +105,12 @@ let activeVector: Vector
 let activeSVG: SVGSVGElement
 let coordMatrix: DOMMatrix
 let draggingB: boolean
+
 function startVectorDrag(e: PointerEvent, v: Vector, isB: boolean = false) {
   activeVector = v
-  
   activeSVG = (e.target! as SVGElement).ownerSVGElement!
   coordMatrix = activeSVG.getScreenCTM()!.inverse()
   draggingB = isB
-
   activeSVG.addEventListener('pointermove', onVectorDrag)
   activeSVG.addEventListener('pointerup', endVectorDrag)
   activeSVG.addEventListener('pointerleave', endVectorDrag)
@@ -158,7 +134,6 @@ function endVectorDrag(e: PointerEvent) {
 </script>
 
 
-<!-- sqrt(3) = 1.732 -->
 <template lang="pug">
 div(id="matrix_mult")
   div(id="graphs")
@@ -246,7 +221,6 @@ div(id="matrix_mult")
             use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4"
               :transform="arrowheadTransform(b)" @pointerdown="(e) => startVectorDrag(e, b, true)")
         
-
   div(id="equation")
     svg(class="bracket" width="1em" height="5em" viewBox="0 0 1 5")
       symbol(id="bracket" viewBox="-0.25 0 0.25 5" width="0.5" height="5")
@@ -293,15 +267,12 @@ div(id="matrix_mult")
     
     svg(class="bracket" width="1em" height="5em" viewBox="0 0 1 5")
       use(href="#bracket" transform="scale(-1 1)" x="-0.5" y="0")
-    
 </template>
 
 
 <style scoped lang="stylus">
 body
   background-color #242424
-// #matrix_mult
-//   width: 100%
 
 h4
   margin 0.5em
@@ -315,8 +286,6 @@ h4
 .graph
   border 2px solid black
   background-color #181818
-
-
 
 .arrowhead
   &:hover
