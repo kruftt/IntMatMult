@@ -8,8 +8,6 @@ import {
 
 type Vector = { 0: number, 1: number }
 
-const v_x = ref<SVGGElement|null>(null)
-
 const a11 = ref(3)
 const a12 = ref(1)
 const a21 = ref(-1)
@@ -28,6 +26,13 @@ const xc1 = computed(() => [x[0]*c1[0], x[0]*c1[1]])
 const xc2 = computed(() => [x[1]*c2[0], x[1]*c2[1]])
 const hp1 = computed(() => getLineCoords(r1[0], r1[1], b[0]))
 const hp2 = computed(() => getLineCoords(r2[0], r2[1], b[1]))
+
+enum SlnType {
+  None,
+  Point,
+  Line
+}
+const slnType = ref(SlnType.Point)
 
 function getLineCoords(x: number, y: number, b: number) {
   if (y == 0) {
@@ -63,30 +68,72 @@ function getLineCoords(x: number, y: number, b: number) {
 function compute_b() {
   b[0] = r1[0]*x[0] + r1[1]*x[1]
   b[1] = r2[0]*x[0] + r2[1]*x[1]
+  const det = (A[0][0]*A[1][1] - A[1][0]*A[0][1])
+  if (det == 0) {
+    slnType.value = SlnType.Line
+  } else {
+    slnType.value = SlnType.Point
+  }
 }
 
 function compute_x() {
-  const inv_det = 1 / (A[0][0]*A[1][1] - A[1][0]*A[0][1])
-  x[0] = inv_det * (A[1][1]*b[0] - A[0][1]*b[1])
-  x[1] = inv_det * (A[0][0]*b[1] - A[1][0]*b[0])
+  const det = (A[0][0]*A[1][1] - A[1][0]*A[0][1])
+  if (det == 0) {
+    
+    if ((b[0]*(c1[1]+c2[1]) != b[1]*(c1[0]+c2[0])) // b not a combo of columns
+      // b
+      // || (c1[0] == 0 && c1[1] == 0) // Still could work!
+      // || (c2[0] == 0 && c2[1] == 0)
+    ) {
+      // or X is not (no solutions)
+      // - hide X vector
+      // - hide xc1, xc2
+      // - (no X line)
+      slnType.value = SlnType.None
+    } else {    
+      // b is a combo of columns
+      // (x becomes a line)
+      // - draw X line (on top of column lines)
+      const sr1 = r1[0] + r2[0]
+      const sr2 = r1[1] + r2[1]
+      const sb = b[0] + b[1]
+      const sq = sr1*sr1 + sr2*sr2 // 5
+      x[0] = (sb*sr1/sq)
+      x[1] = (sb*sr2/sq)
+
+      // const sq = r1[0]*r1[0] + r1[1]*r1[1]
+      // x[0] = (b[0]*r1[0]/sq)
+      // x[1] = (b[0]*r1[1]/sq)
+      slnType.value = SlnType.Line
+    }
+  } else {
+    const inv_det = 1 / det
+    x[0] = inv_det * (A[1][1]*b[0] - A[0][1]*b[1])
+    x[1] = inv_det * (A[0][0]*b[1] - A[1][0]*b[0])
+    slnType.value = SlnType.Point
+  }
 }
 
 const _deg = 180/Math.PI
-const vTransform = (x: number, y: number, cx=x, cy=y) => `rotate(${_deg * Math.atan2(y, x) - 90}, ${cx}, ${cy})`
+const vectorTransform = (v: Vector) => `translate(${v[0]}, ${v[1]})`
+const arrowheadTransform = (v: Vector) => `rotate(${_deg * Math.atan2(v[1], v[0]) - 90}, 0, 0)`
+const labelTransform = (v: Vector) => {
+  const ang = Math.atan2(v[1], v[0])
+  return `translate(${0.8 * Math.cos(ang)}, ${0.8 * Math.sin(ang)})`
+}
 
 
 const drag_pt = new DOMPoint()
 let activeVector: Vector
 let activeSVG: SVGSVGElement
 let coordMatrix: DOMMatrix
-let rox: boolean
-function startVectorDrag(e: PointerEvent, v: Vector, rowOrX: boolean) {
-  console.log('start')
+let draggingB: boolean
+function startVectorDrag(e: PointerEvent, v: Vector, isB: boolean = false) {
   activeVector = v
   
   activeSVG = (e.target! as SVGElement).ownerSVGElement!
   coordMatrix = activeSVG.getScreenCTM()!.inverse()
-  rox = rowOrX
+  draggingB = isB
 
   activeSVG.addEventListener('pointermove', onVectorDrag)
   activeSVG.addEventListener('pointerup', endVectorDrag)
@@ -99,26 +146,15 @@ function onVectorDrag(e: PointerEvent) {
   const coords = drag_pt.matrixTransform(coordMatrix)
   activeVector[0] = coords.x
   activeVector[1] = coords.y
-  if (rox) compute_b()
-  else compute_x()
+  if (draggingB) compute_x()
+  else compute_b()
 }
 
 function endVectorDrag(e: PointerEvent) {
-  console.log('end')
   activeSVG.removeEventListener('pointermove', onVectorDrag)
   activeSVG.removeEventListener('pointerup', endVectorDrag)
   activeSVG.removeEventListener('pointerleave', endVectorDrag)
 }
-
-function printCoords(e: PointerEvent) {
-  const svg = e.target as SVGSVGElement
-  drag_pt.x = e.clientX
-  drag_pt.y = e.clientY
-  console.log(drag_pt.matrixTransform(svg.getScreenCTM()!.inverse()))
-}
-
-
-onMounted(() => {})
 </script>
 
 
@@ -136,25 +172,38 @@ div(id="matrix_mult")
           line(x1="0" y1="-10" x2="0" y2="10")
           line(x1="-10" y1="0" x2="10" y2="0")
         
-        g(id="hp1" class="hp row1")
+        g(class="hp row1")
           line(:x1="hp1[0]" :y1="hp1[1]" :x2="hp1[2]" :y2="hp1[3]")
-          //- line(x1="-6" y1="-10" x2="10" y2="6")
         
-        g(id="hp2" class="hp row2")
+        g(class="hp row2")
           line(:x1="hp2[0]" :y1="hp2[1]" :x2="hp2[2]" :y2="hp2[3]")
-          //- line(x1="10" y1="-6" x2="-6" y2="10")
         
-        g(id="row1" class="vec row1")
+        g(v-if="slnType == SlnType.Line" class="x")
+          line(:x1="hp2[0]" :y1="hp2[1]" :x2="hp2[2]" :y2="hp2[3]" stroke-width="0.1")
+        
+        g(class="vec row1")
           line(x1="0" y1="0" :x2="r1[0]" :y2="r1[1]")
-          use(href="#arrowhead" class="arrowhead" :x="r1[0]-0.4" :y="r1[1]-0.4" :transform="vTransform(r1[0], r1[1])" @pointerdown="(e) => startVectorDrag(e, r1, true)")
+          g(:transform="vectorTransform(r1)")
+            g(:transform="labelTransform(r1)")
+              text(class="vlabel") r1
+            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4"
+              :transform="arrowheadTransform(r1)" @pointerdown="(e) => startVectorDrag(e, r1)")
         
-        g(id="row2" class="vec row2")
+        g(class="vec row2")
           line(x1="0" y1="0" :x2="r2[0]" :y2="r2[1]")
-          use(href="#arrowhead" class="arrowhead" :x="r2[0]-0.4" :y="r2[1]-0.4" :transform="vTransform(r2[0], r2[1])" @pointerdown="(e) => startVectorDrag(e, r2, true)")
+          g(:transform="vectorTransform(r2)")
+            g(:transform="labelTransform(r2)")
+              text(class="vlabel") r2
+            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4"
+              :transform="arrowheadTransform(r2)" @pointerdown="(e) => startVectorDrag(e, r2)")
         
-        g(ref="v_x" class="vec x")
+        g(v-if="slnType != SlnType.None" class="vec x")
           line(x1="0" y1="0" :x2="x[0]" :y2="x[1]")
-          use(href="#arrowhead" class="arrowhead" :x="x[0]-0.4" :y="x[1]-0.4" :transform="vTransform(x[0], x[1])" @pointerdown="(e) => startVectorDrag(e, x, true)")
+          g(:transform="vectorTransform(x)")
+            g(:transform="labelTransform(x)")
+              text(class="vlabel") x
+            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4"
+              :transform="arrowheadTransform(x)" @pointerdown="(e) => startVectorDrag(e, x)")
 
     div
       h4 Codomain
@@ -163,25 +212,39 @@ div(id="matrix_mult")
             line(x1="0" y1="-10" x2="0" y2="10")
             line(x1="-10" y1="0" x2="10" y2="0")
 
-        g(class="vec col1 xcol")
+        g(v-if="slnType != SlnType.None" class="vec col1 xcol")
           line(x1="0" y1="0" :x2="xc1[0]" :y2="xc1[1]")
-          use(href="#arrowhead" class="arrowhead" :x="xc1[0]-0.4" :y="xc1[1]-0.4" :transform="vTransform(xc1[0], xc1[1])")
+          g(:transform="vectorTransform(xc1)")
+            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4" :transform="arrowheadTransform(xc1)")
         
-        g(class="vec col2 xcol")
+        g(v-if="slnType != SlnType.None" class="vec col2 xcol")
           line(:x1="xc1[0]" :y1="xc1[1]" :x2="xc1[0]+xc2[0]" :y2="xc1[1]+xc2[1]")
-          use(href="#arrowhead" class="arrowhead" :x="b[0]-0.4" :y="b[1]-0.4" :transform="vTransform(xc2[0], xc2[1], b[0], b[1])")
+          g(:transform="`translate(${xc1[0]+xc2[0]}, ${xc1[1]+xc2[1]})`")
+            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4" :transform="arrowheadTransform(xc2)")
 
-        g(id="col1" class="vec col1")
+        g(class="vec col1")
           line(x1="0" y1="0" :x2="c1[0]" :y2="c1[1]")
-          use(href="#arrowhead" class="arrowhead" :x="c1[0]-0.4" :y="c1[1]-0.4" :transform="vTransform(c1[0], c1[1])" @pointerdown="(e) => startVectorDrag(e, c1, false)")
+          g(:transform="vectorTransform(c1)")
+            g(:transform="labelTransform(c1)")
+              text(class="vlabel") c1
+            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4"
+              :transform="arrowheadTransform(c1)" @pointerdown="(e) => startVectorDrag(e, c1)")
         
-        g(id="col2" class="vec col2")
+        g(class="vec col2")
           line(x1="0" y1="0" :x2="c2[0]" :y2="c2[1]")
-          use(href="#arrowhead" class="arrowhead" :x="c2[0]-0.4" :y="c2[1]-0.4" :transform="vTransform(c2[0], c2[1])"  @pointerdown="(e) => startVectorDrag(e, c2, false)")
+          g(:transform="vectorTransform(c2)")
+            g(:transform="labelTransform(c2)")
+              text(class="vlabel") c2
+            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4"
+              :transform="arrowheadTransform(c2)"  @pointerdown="(e) => startVectorDrag(e, c2)")
 
-        g(id="b" class="vec b")
+        g(class="vec b")
           line(x1="0" y1="0" :x2="b[0]" :y2="b[1]")
-          use(href="#arrowhead" class="arrowhead" :x="b[0]-0.4" :y="b[1]-0.4" :transform="vTransform(b[0], b[1])" @pointerdown="(e) => startVectorDrag(e, b, false)")
+          g(:transform="vectorTransform(b)")
+            g(:transform="labelTransform(b)")
+              text(class="vlabel") b
+            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4"
+              :transform="arrowheadTransform(b)" @pointerdown="(e) => startVectorDrag(e, b, true)")
         
 
   div(id="equation")
@@ -265,6 +328,13 @@ h4
 
 .vec
   stroke-width 0.1
+
+.vlabel
+  stroke none
+  font-size 0.04em
+  transform scaleY(-1)
+  text-anchor middle
+  dominant-baseline middle
 
 .row1
   fill #FF0
