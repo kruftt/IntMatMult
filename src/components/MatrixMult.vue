@@ -347,11 +347,12 @@ h4
   background-color #0000
   color #bbb
   text-align center
-  width 2.9em
-  padding 0.5em 0
+  width 2.4em
+  padding 0.5em 0.2em
   white-space nowrap
   overflow hidden
   text-overflow clip
+
   &:focus
     outline none
 

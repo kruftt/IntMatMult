@@ -21,6 +21,7 @@
 }
 .num_input {
     -moz-appearance: textfield;
+    width: 3em;
 }
 
 a {
