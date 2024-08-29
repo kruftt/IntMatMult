@@ -140,7 +140,7 @@ div(id="matrix_mult")
     div
       h4 Domain
       svg(class="graph" id="domain" width="30em" height="30em" viewBox="-10 -10 20 20" transform="scale(1,-1)")
-        symbol(id="arrowhead" width="0.8" height="0.8" viewBox="-1 -1 2 2")
+        symbol(id="arrowhead" width="1.2" height="1.2" viewBox="-1 -1 2 2")
           polygon(points="-0.3,-1 0.3,-1 0,0")
 
         g(stroke="#555" stroke-width="0.1")
