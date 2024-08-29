@@ -15,10 +15,12 @@
   -webkit-text-size-adjust: 100%;
 }
 
+.num_input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
 .num_input {
-    -webkit-appearance: none;
     -moz-appearance: textfield;
-    margin: 0;
 }
 
 a {
