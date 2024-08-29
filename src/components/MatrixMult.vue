@@ -352,6 +352,7 @@ h4
   white-space nowrap
   overflow hidden
   text-overflow clip
+  margin-right 0.4em
 
   &:focus
     outline none
