@@ -140,7 +140,7 @@ div(id="matrix_mult")
     div
       h4 Domain
       svg(class="graph" id="domain" width="30em" height="30em" viewBox="-10 -10 20 20" transform="scale(1,-1)")
-        symbol(id="arrowhead" width="1.2" height="1.2" viewBox="-1 -1 2 2")
+        symbol(id="arrowhead" width="1.0" height="1.0" viewBox="-1 -1 2 2")
           polygon(points="-0.3,-1 0.3,-1 0,0")
 
         g(stroke="#555" stroke-width="0.1")
@@ -161,7 +161,7 @@ div(id="matrix_mult")
           g(:transform="vectorTransform(r1)")
             g(:transform="labelTransform(r1)")
               text(class="vlabel") r1
-            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4"
+            use(href="#arrowhead" class="arrowhead" x="-0.5" y="-0.5"
               :transform="arrowheadTransform(r1)" @pointerdown="(e) => startVectorDrag(e, r1)")
         
         g(class="vec row2")
@@ -169,7 +169,7 @@ div(id="matrix_mult")
           g(:transform="vectorTransform(r2)")
             g(:transform="labelTransform(r2)")
               text(class="vlabel") r2
-            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4"
+            use(href="#arrowhead" class="arrowhead" x="-0.5" y="-0.5"
               :transform="arrowheadTransform(r2)" @pointerdown="(e) => startVectorDrag(e, r2)")
         
         g(v-if="slnType != SlnType.None" class="vec x")
@@ -177,7 +177,7 @@ div(id="matrix_mult")
           g(:transform="vectorTransform(x)")
             g(:transform="labelTransform(x)")
               text(class="vlabel") x
-            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4"
+            use(href="#arrowhead" class="arrowhead" x="-0.5" y="-0.5"
               :transform="arrowheadTransform(x)" @pointerdown="(e) => startVectorDrag(e, x)")
 
     div
@@ -190,19 +190,19 @@ div(id="matrix_mult")
         g(v-if="slnType != SlnType.None" class="vec col1 xcol")
           line(x1="0" y1="0" :x2="xc1[0]" :y2="xc1[1]")
           g(:transform="vectorTransform(xc1)")
-            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4" :transform="arrowheadTransform(xc1)")
+            use(href="#arrowhead" class="arrowhead" x="-0.5" y="-0.5" :transform="arrowheadTransform(xc1)")
         
         g(v-if="slnType != SlnType.None" class="vec col2 xcol")
           line(:x1="xc1[0]" :y1="xc1[1]" :x2="xc1[0]+xc2[0]" :y2="xc1[1]+xc2[1]")
           g(:transform="`translate(${xc1[0]+xc2[0]}, ${xc1[1]+xc2[1]})`")
-            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4" :transform="arrowheadTransform(xc2)")
+            use(href="#arrowhead" class="arrowhead" x="-0.5" y="-0.5" :transform="arrowheadTransform(xc2)")
 
         g(class="vec col1")
           line(x1="0" y1="0" :x2="c1[0]" :y2="c1[1]")
           g(:transform="vectorTransform(c1)")
             g(:transform="labelTransform(c1)")
               text(class="vlabel") c1
-            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4"
+            use(href="#arrowhead" class="arrowhead" x="-0.5" y="-0.5"
               :transform="arrowheadTransform(c1)" @pointerdown="(e) => startVectorDrag(e, c1)")
         
         g(class="vec col2")
@@ -210,7 +210,7 @@ div(id="matrix_mult")
           g(:transform="vectorTransform(c2)")
             g(:transform="labelTransform(c2)")
               text(class="vlabel") c2
-            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4"
+            use(href="#arrowhead" class="arrowhead" x="-0.5" y="-0.5"
               :transform="arrowheadTransform(c2)"  @pointerdown="(e) => startVectorDrag(e, c2)")
 
         g(class="vec b")
@@ -218,7 +218,7 @@ div(id="matrix_mult")
           g(:transform="vectorTransform(b)")
             g(:transform="labelTransform(b)")
               text(class="vlabel") b
-            use(href="#arrowhead" class="arrowhead" x="-0.4" y="-0.4"
+            use(href="#arrowhead" class="arrowhead" x="-0.5" y="-0.5"
               :transform="arrowheadTransform(b)" @pointerdown="(e) => startVectorDrag(e, b, true)")
         
   div(id="equation")
